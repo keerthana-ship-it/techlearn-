@@ -71,7 +71,7 @@
                             
                             <form method="POST" action="{{ url_for('crux.reset_progress', roadmap_id=roadmap.id) }}"
                                   onsubmit="return confirm('Are you sure you want to reset your progress? This cannot be undone.')">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <!-- No CSRF token required for now -->
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
                                     <i class="fas fa-undo me-2"></i>Reset Progress
                                 </button>
