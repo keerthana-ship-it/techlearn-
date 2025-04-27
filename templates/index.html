@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}TechLearn - Learn, Connect, Grow{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="px-4 py-5 my-5 text-center">
+        <h1 class="display-5 fw-bold">TechLearn Platform</h1>
+        <div class="col-lg-6 mx-auto">
+            <p class="lead mb-4">
+                Your comprehensive tech learning platform to collect resources, connect with events, and follow structured learning paths.
+            </p>
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg px-4 gap-3">
+                    <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+                </a>
+                {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg px-4 gap-3">
+                    <i class="fas fa-user-plus me-2"></i>Join Now
+                </a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg px-4">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Module Highlights -->
+    <div class="row g-4 py-5 row-cols-1 row-cols-md-3">
+        <!-- Collect Module -->
+        <div class="col d-flex align-items-stretch">
+            <div class="card w-100">
+                <div class="card-body">
+                    <h2 class="card-title"><i class="fas fa-book text-primary me-2"></i>Collect</h2>
+                    <p class="card-text">Curated learning resources including articles, videos, courses, and tutorials. Filter by skills, difficulty, and content type to find exactly what you need.</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('collect.index') }}" class="btn btn-sm btn-outline-primary">Explore Resources</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Connect Module -->
+        <div class="col d-flex align-items-stretch">
+            <div class="card w-100">
+                <div class="card-body">
+                    <h2 class="card-title"><i class="fas fa-users text-success me-2"></i>Connect</h2>
+                    <p class="card-text">Discover tech events both online and in-person. Stay informed about meetups, conferences, and workshops in your area of interest.</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('connect.index') }}" class="btn btn-sm btn-outline-success">Find Events</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Crux Module -->
+        <div class="col d-flex align-items-stretch">
+            <div class="card w-100">
+                <div class="card-body">
+                    <h2 class="card-title"><i class="fas fa-route text-info me-2"></i>Crux</h2>
+                    <p class="card-text">Structured learning roadmaps to guide your skill development. Track your progress and follow expert-designed paths to master new technologies.</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('crux.index') }}" class="btn btn-sm btn-outline-info">Follow Roadmaps</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Featured Content Section -->
+    {% if featured_content %}
+    <div class="my-5">
+        <h2 class="mb-4"><i class="fas fa-star text-warning me-2"></i>Featured Learning Resources</h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for content in featured_content %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <span class="badge bg-secondary mb-2">{{ content.content_type|capitalize }}</span>
+                        <h5 class="card-title">{{ content.title }}</h5>
+                        <p class="card-text">{{ content.description|truncate(100) }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-{{ difficulty_color(content.difficulty_level) }}">
+                                    {{ content.difficulty_level|capitalize }}
+                                </span>
+                                <span class="badge {% if content.is_free %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if content.is_free %}Free{% else %}Paid{% endif %}
+                                </span>
+                            </div>
+                            <small class="text-muted">{{ content.estimated_time }} min</small>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('collect.content_detail', content_id=content.id) }}" class="btn btn-sm btn-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('collect.index') }}" class="btn btn-outline-primary">View All Resources</a>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Upcoming Events Section -->
+    {% if upcoming_events %}
+    <div class="my-5">
+        <h2 class="mb-4"><i class="fas fa-calendar text-danger me-2"></i>Upcoming Events</h2>
+        <div class="row">
+            {% for event in upcoming_events %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text">{{ event.description|truncate(100) }}</p>
+                        
+                        <div class="mt-3">
+                            <p class="mb-1">
+                                <i class="far fa-calendar-alt me-2"></i>
+                                {{ event.event_date.strftime('%B %d, %Y at %I:%M %p') }}
+                            </p>
+                            <p class="mb-1">
+                                <i class="fas fa-map-marker-alt me-2"></i>
+                                {{ event.location }}
+                            </p>
+                            <p class="mb-0">
+                                <i class="fas fa-user-tie me-2"></i>
+                                {{ event.organizer }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('connect.event_detail', event_id=event.id) }}" class="btn btn-sm btn-primary">View Event</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('connect.index') }}" class="btn btn-outline-primary">View All Events</a>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Popular Skills Section -->
+    {% if popular_skills %}
+    <div class="my-5">
+        <h2 class="mb-4"><i class="fas fa-tags text-success me-2"></i>Popular Skills</h2>
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+            {% for skill in popular_skills %}
+            <a href="{{ url_for('collect.index', skills=skill.id) }}" class="btn btn-outline-secondary">
+                {{ skill.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Call to Action Section -->
+    <div class="p-5 mb-5 bg-dark rounded-3">
+        <div class="container py-5">
+            <h2 class="display-5 fw-bold">Start your learning journey today</h2>
+            <p class="col-md-8 fs-4">Join TechLearn to access curated resources, attend events, and follow structured learning paths.</p>
+            {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-user-plus me-2"></i>Sign Up Now
+            </a>
+            {% else %}
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

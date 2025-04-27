@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %}Learning Paths - TechLearn{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>
+                <i class="fas fa-route text-info me-2"></i>Learning Paths
+            </h1>
+            <p class="lead">
+                Follow structured roadmaps to guide your learning journey and track your progress.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-filter me-2"></i>Filter Roadmaps
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('crux.index') }}" class="filter-form">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="skills" class="form-label">Skills</label>
+                        {{ form.skills(class="form-control skill-select", multiple="multiple", data_live_search="true", id="skills") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="difficulty" class="form-label">Difficulty Level</label>
+                        {{ form.difficulty(class="form-control", id="difficulty") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        {{ form.search(class="form-control", placeholder="Search roadmap titles & descriptions", id="search") }}
+                    </div>
+                    
+                    <div class="col-12 mt-3 d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Apply Filters
+                        </button>
+                        <a href="{{ url_for('crux.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Results Section -->
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2>Available Roadmaps</h2>
+            <p class="mb-0">
+                Showing {{ roadmap_pagination.items|length }} of {{ roadmap_pagination.total }} roadmaps
+            </p>
+        </div>
+    </div>
+    
+    <!-- Roadmap Cards -->
+    {% if roadmap_pagination.items %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+            {% for roadmap in roadmap_pagination.items %}
+                <div class="col d-flex align-items-stretch">
+                    <div class="card w-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 text-truncate">{{ roadmap.title }}</h5>
+                            {% if roadmap.difficulty_level %}
+                                <span class="badge bg-{{ difficulty_color(roadmap.difficulty_level) }}">
+                                    {{ roadmap.difficulty_level|capitalize }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ roadmap.description|truncate(120) }}</p>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar-day me-1"></i> 
+                                        Est. time: {{ roadmap.estimated_completion_time or '?' }} days
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-list me-1"></i> 
+                                        {{ roadmap.topics|length }} topics
+                                    </small>
+                                </div>
+                                
+                                <div class="d-flex flex-wrap mb-2">
+                                    {% for skill in roadmap.skills[:3] %}
+                                        <span class="badge bg-secondary me-1 mb-1">{{ skill.name }}</span>
+                                    {% endfor %}
+                                    {% if roadmap.skills|length > 3 %}
+                                        <span class="badge bg-secondary mb-1">+{{ roadmap.skills|length - 3 }} more</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if current_user.is_authenticated and roadmap.id in user_progress %}
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span>Your progress</span>
+                                        <span>{{ user_progress[roadmap.id]|round(1) }}%</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ user_progress[roadmap.id] }}%"
+                                             aria-valuenow="{{ user_progress[roadmap.id] }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="d-grid">
+                                <a href="{{ url_for('crux.roadmap_detail', roadmap_id=roadmap.id) }}" class="btn btn-primary">
+                                    {% if current_user.is_authenticated and roadmap.id in user_progress %}
+                                        <i class="fas fa-play me-2"></i>Continue Learning
+                                    {% else %}
+                                        <i class="fas fa-info-circle me-2"></i>View Details
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <small class="text-muted">
+                                Updated: {{ roadmap.created_date.strftime('%B %d, %Y') }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if roadmap_pagination.pages > 1 %}
+            <nav aria-label="Roadmap pagination">
+                <ul class="pagination justify-content-center">
+                    {% if roadmap_pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('crux.index', page=roadmap_pagination.prev_num, skills=request.args.getlist('skills'), difficulty=request.args.get('difficulty'), search=request.args.get('search')) }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in roadmap_pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == roadmap_pagination.page %}
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('crux.index', page=page_num, skills=request.args.getlist('skills'), difficulty=request.args.get('difficulty'), search=request.args.get('search')) }}">{{ page_num }}</a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">&hellip;</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if roadmap_pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('crux.index', page=roadmap_pagination.next_num, skills=request.args.getlist('skills'), difficulty=request.args.get('difficulty'), search=request.args.get('search')) }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> No roadmaps found matching your criteria. Try adjusting your filters.
+        </div>
+    {% endif %}
+    
+    <!-- Information Section -->
+    <div class="card bg-light mt-4">
+        <div class="card-body">
+            <h5 class="card-title">About Learning Paths</h5>
+            <p class="card-text">
+                <i class="fas fa-info-circle me-2 text-info"></i>
+                Learning paths (roadmaps) are structured learning guides that help you master new skills in a logical sequence.
+            </p>
+            <p class="card-text">
+                <i class="fas fa-check-circle me-2 text-success"></i>
+                Track your progress as you complete topics and resources within each roadmap.
+            </p>
+            <p class="card-text">
+                <i class="fas fa-lightbulb me-2 text-warning"></i>
+                Each roadmap is curated by experts to ensure you learn concepts in the most effective order.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize select picker if available
+    if (typeof $.fn.selectpicker !== 'undefined') {
+        $(document).ready(function() {
+            $('.skill-select').selectpicker();
+        });
+    }
+</script>
+{% endblock %}

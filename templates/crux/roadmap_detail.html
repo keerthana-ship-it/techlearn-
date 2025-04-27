@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ roadmap.title }} - TechLearn{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mt-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('crux.index') }}">Learning Paths</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ roadmap.title|truncate(30) }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ roadmap.title }}</h4>
+                    {% if roadmap.difficulty_level %}
+                        <span class="badge bg-{{ difficulty_color(roadmap.difficulty_level) }}">
+                            {{ roadmap.difficulty_level|capitalize }}
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>
+                                <i class="fas fa-calendar-day me-1 text-muted"></i>
+                                Estimated Time: {{ roadmap.estimated_completion_time or '?' }} days
+                            </span>
+                            <span>
+                                <i class="fas fa-list me-1 text-muted"></i>
+                                {{ roadmap.topics|length }} topics
+                            </span>
+                        </div>
+                        
+                        <p>{{ roadmap.description }}</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Skills Covered</h5>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if roadmap.skills %}
+                                {% for skill in roadmap.skills %}
+                                    <a href="{{ url_for('crux.index', skills=skill.id) }}" class="badge bg-secondary text-decoration-none">
+                                        {{ skill.name }}
+                                    </a>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">No skills specified</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if user_progress %}
+                        <div class="mb-4">
+                            <h5>Your Progress</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span>{{ user_progress.completion_percentage|round(1) }}% Complete</span>
+                                <span>Last updated: {{ user_progress.last_updated.strftime('%B %d, %Y') }}</span>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ user_progress.completion_percentage }}%"
+                                     aria-valuenow="{{ user_progress.completion_percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                            </div>
+                            
+                            <form method="POST" action="{{ url_for('crux.reset_progress', roadmap_id=roadmap.id) }}"
+                                  onsubmit="return confirm('Are you sure you want to reset your progress? This cannot be undone.')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-undo me-2"></i>Reset Progress
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Topics Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Roadmap Topics</h5>
+                </div>
+                <div class="card-body">
+                    {% if topics %}
+                        <div class="roadmap-topics">
+                            {% for topic in topics %}
+                                {% set is_completed = user_progress and topic.id in topic_completions and topic_completions[topic.id] %}
+                                
+                                <div id="topic-{{ topic.id }}" class="roadmap-topic {% if is_completed %}topic-completed{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            {% if current_user.is_authenticated and user_progress %}
+                                                <form id="mark-topic-form-{{ topic.id }}" method="POST" action="{{ url_for('crux.mark_topic', topic_id=topic.id) }}" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <div class="form-check d-inline-block me-2">
+                                                        <input type="checkbox" class="form-check-input topic-checkbox" 
+                                                               id="topic-check-{{ topic.id }}" 
+                                                               data-topic-id="{{ topic.id }}"
+                                                               {% if is_completed %}checked{% endif %}>
+                                                    </div>
+                                                </form>
+                                            {% endif %}
+                                            
+                                            <strong>{{ topic.order }}. {{ topic.title }}</strong>
+                                        </div>
+                                        <div>
+                                            {% if is_completed %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if topic.description %}
+                                        <p class="mt-2 mb-2">{{ topic.description }}</p>
+                                    {% endif %}
+                                    
+                                    {% if topic.resources %}
+                                        <div class="ms-4 mt-2">
+                                            <strong><i class="fas fa-book me-1"></i>Resources:</strong>
+                                            <ul class="list-unstyled mt-1">
+                                                {% for resource in topic.resources|sort(attribute='order') %}
+                                                    <li class="mb-1">
+                                                        {% if resource.content %}
+                                                            <a href="{{ url_for('collect.content_detail', content_id=resource.content.id) }}" class="text-decoration-none">
+                                                                {{ resource.content.title }}
+                                                                <i class="fas fa-external-link-alt ms-1 text-muted"></i>
+                                                            </a>
+                                                        {% elif resource.url %}
+                                                            <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                                                                {{ resource.title or 'External Resource' }}
+                                                                <i class="fas fa-external-link-alt ms-1 text-muted"></i>
+                                                            </a>
+                                                        {% else %}
+                                                            {{ resource.title }}
+                                                        {% endif %}
+                                                        {% if resource.description %}
+                                                            <small class="d-block text-muted">{{ resource.description }}</small>
+                                                        {% endif %}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Subtopics -->
+                                    {% if topic.subtopics.count() > 0 %}
+                                        <div class="roadmap-subtopics mt-3">
+                                            {% for subtopic in topic.subtopics|sort(attribute='order') %}
+                                                {% set is_subtopic_completed = user_progress and subtopic.id in topic_completions and topic_completions[subtopic.id] %}
+                                                
+                                                <div id="topic-{{ subtopic.id }}" class="roadmap-topic roadmap-subtopic {% if is_subtopic_completed %}topic-completed{% endif %}">
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <div>
+                                                            {% if current_user.is_authenticated and user_progress %}
+                                                                <form id="mark-topic-form-{{ subtopic.id }}" method="POST" action="{{ url_for('crux.mark_topic', topic_id=subtopic.id) }}" class="d-inline">
+                                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                    <div class="form-check d-inline-block me-2">
+                                                                        <input type="checkbox" class="form-check-input topic-checkbox" 
+                                                                               id="topic-check-{{ subtopic.id }}" 
+                                                                               data-topic-id="{{ subtopic.id }}"
+                                                                               {% if is_subtopic_completed %}checked{% endif %}>
+                                                                    </div>
+                                                                </form>
+                                                            {% endif %}
+                                                            
+                                                            <strong>{{ topic.order }}.{{ subtopic.order }} {{ subtopic.title }}</strong>
+                                                        </div>
+                                                        <div>
+                                                            {% if is_subtopic_completed %}
+                                                                <span class="badge bg-success">Completed</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {% if subtopic.description %}
+                                                        <p class="mt-2 mb-2">{{ subtopic.description }}</p>
+                                                    {% endif %}
+                                                    
+                                                    {% if subtopic.resources %}
+                                                        <div class="ms-4 mt-2">
+                                                            <strong><i class="fas fa-book me-1"></i>Resources:</strong>
+                                                            <ul class="list-unstyled mt-1">
+                                                                {% for resource in subtopic.resources|sort(attribute='order') %}
+                                                                    <li class="mb-1">
+                                                                        {% if resource.content %}
+                                                                            <a href="{{ url_for('collect.content_detail', content_id=resource.content.id) }}" class="text-decoration-none">
+                                                                                {{ resource.content.title }}
+                                                                                <i class="fas fa-external-link-alt ms-1 text-muted"></i>
+                                                                            </a>
+                                                                        {% elif resource.url %}
+                                                                            <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                                                                                {{ resource.title or 'External Resource' }}
+                                                                                <i class="fas fa-external-link-alt ms-1 text-muted"></i>
+                                                                            </a>
+                                                                        {% else %}
+                                                                            {{ resource.title }}
+                                                                        {% endif %}
+                                                                        {% if resource.description %}
+                                                                            <small class="d-block text-muted">{{ resource.description }}</small>
+                                                                        {% endif %}
+                                                                    </li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> No topics have been added to this roadmap yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Action Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-play-circle me-2"></i>Start Learning</h5>
+                </div>
+                <div class="card-body">
+                    {% if current_user.is_authenticated %}
+                        {% if user_progress %}
+                            <p>You're making progress on this roadmap!</p>
+                            <div class="d-grid gap-2">
+                                <a href="#topic-{{ topic_completions|selectattr('1', 'eq', false)|first|default('1') }}" class="btn btn-primary">
+                                    <i class="fas fa-play me-2"></i>Continue Learning
+                                </a>
+                            </div>
+                        {% else %}
+                            <p>Start tracking your progress with this roadmap.</p>
+                            <form method="POST" action="{{ url_for('crux.start_roadmap', roadmap_id=roadmap.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-play me-2"></i>Start This Roadmap
+                                    </button>
+                                </div>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <p>Log in to track your progress with this roadmap.</p>
+                        <div class="d-grid">
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Log In to Start
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- How to Use Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>How to Use</h5>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li>Start the roadmap to track your progress</li>
+                        <li>Follow topics in the recommended order</li>
+                        <li>Study each resource thoroughly</li>
+                        <li>Check off topics as you complete them</li>
+                        <li>Your progress is automatically saved</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <!-- Share Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-share-alt me-2"></i>Share Roadmap</h5>
+                </div>
+                <div class="card-body">
+                    <p>Share this learning path with others:</p>
+                    
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="https://twitter.com/intent/tweet?text={{ 'Check out this learning path: ' + roadmap.title|urlencode }}&url={{ url_for('crux.roadmap_detail', roadmap_id=roadmap.id, _external=True)|urlencode }}" 
+                           target="_blank" rel="noopener noreferrer" 
+                           class="btn btn-outline-primary">
+                            <i class="fab fa-twitter me-2"></i>Twitter
+                        </a>
+                        
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ url_for('crux.roadmap_detail', roadmap_id=roadmap.id, _external=True)|urlencode }}" 
+                           target="_blank" rel="noopener noreferrer" 
+                           class="btn btn-outline-primary">
+                            <i class="fab fa-linkedin me-2"></i>LinkedIn
+                        </a>
+                        
+                        <a href="mailto:?subject={{ 'Learning Path: ' + roadmap.title|urlencode }}&body={{ 'Check out this learning path: ' + roadmap.title + '%0D%0A%0D%0A' + roadmap.description|truncate(100)|urlencode + '%0D%0A%0D%0AView details: ' + url_for('crux.roadmap_detail', roadmap_id=roadmap.id, _external=True)|urlencode }}" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-2"></i>Email
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

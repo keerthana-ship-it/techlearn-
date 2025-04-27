@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Event Calendar - TechLearn{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mt-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('connect.index') }}">Tech Events</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Calendar</li>
+        </ol>
+    </nav>
+    
+    <div class="row mb-4">
+        <div class="col">
+            <h1>
+                <i class="fas fa-calendar-alt text-primary me-2"></i>Event Calendar
+            </h1>
+            <p class="lead">
+                Monthly view of tech events and meetups.
+            </p>
+        </div>
+    </div>
+    
+    <!-- View Options -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="btn-group" role="group" aria-label="View options">
+                <a href="{{ url_for('connect.index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-list me-2"></i>List View
+                </a>
+                <a href="{{ url_for('connect.calendar') }}" class="btn btn-primary active">
+                    <i class="fas fa-calendar-alt me-2"></i>Calendar View
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Month Navigation -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    {% set prev_month = month - 1 if month > 1 else 12 %}
+                    {% set prev_year = year if month > 1 else year - 1 %}
+                    <a href="{{ url_for('connect.calendar', year=prev_year, month=prev_month) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-chevron-left me-2"></i>Previous Month
+                    </a>
+                </div>
+                
+                <div class="col-md-4 text-center mb-3 mb-md-0">
+                    <h3 class="mb-0">{{ month_name }} {{ year }}</h3>
+                </div>
+                
+                <div class="col-md-4 text-end">
+                    {% set next_month = month + 1 if month < 12 else 1 %}
+                    {% set next_year = year if month < 12 else year + 1 %}
+                    <a href="{{ url_for('connect.calendar', year=next_year, month=next_month) }}" class="btn btn-outline-primary">
+                        Next Month<i class="fas fa-chevron-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Calendar Grid -->
+    <div class="card mb-4">
+        <div class="card-body p-2">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Sunday</th>
+                            <th class="text-center">Monday</th>
+                            <th class="text-center">Tuesday</th>
+                            <th class="text-center">Wednesday</th>
+                            <th class="text-center">Thursday</th>
+                            <th class="text-center">Friday</th>
+                            <th class="text-center">Saturday</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+                        {% set first_day = namespace(date=None) %}
+                        {% set first_day.date = datetime(year, month, 1) %}
+                        {% set day_of_week = first_day.date.weekday() %}
+                        {% set month_days = calendar_days|length %}
+                        
+                        {% set week_idx = namespace(value=0) %}
+                        {% set day_idx = namespace(value=1) %}
+                        
+                        {% for week in range((month_days + day_of_week + 6) // 7) %}
+                            <tr style="height: 120px;">
+                                {% for weekday in range(7) %}
+                                    {% set actual_day = day_idx.value - day_of_week - 1 if weekday == 0 else day_idx.value - day_of_week %}
+                                    {% if actual_day > 0 and actual_day <= month_days %}
+                                        <td class="calendar-day">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <strong>{{ actual_day }}</strong>
+                                                {% if calendar_days[actual_day]|length > 0 %}
+                                                    <span class="badge bg-primary rounded-pill">
+                                                        {{ calendar_days[actual_day]|length }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            {% for event in calendar_days[actual_day] %}
+                                                <a href="{{ url_for('connect.event_detail', event_id=event.id) }}" 
+                                                   class="calendar-event d-block text-truncate text-decoration-none{% if event.is_online %} bg-info bg-opacity-25{% else %} bg-warning bg-opacity-25{% endif %}"
+                                                   data-bs-toggle="tooltip" 
+                                                   title="{{ event.title }} - {{ event.event_date.strftime('%I:%M %p') }}">
+                                                    <small>
+                                                        {{ event.event_date.strftime('%I:%M %p') }} - {{ event.title }}
+                                                    </small>
+                                                </a>
+                                            {% endfor %}
+                                        </td>
+                                    {% else %}
+                                        <td class="calendar-day text-muted bg-light"></td>
+                                    {% endif %}
+                                    {% set day_idx.value = day_idx.value + 1 %}
+                                {% endfor %}
+                            </tr>
+                            {% set week_idx.value = week_idx.value + 1 %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Legend -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Calendar Legend</h5>
+            <div class="d-flex flex-wrap gap-3">
+                <div class="d-flex align-items-center">
+                    <div class="calendar-event bg-info bg-opacity-25 me-2" style="width: 20px; height: 20px;"></div>
+                    <span>Online Events</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="calendar-event bg-warning bg-opacity-25 me-2" style="width: 20px; height: 20px;"></div>
+                    <span>In-person Events</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Enable tooltips for event details on hover
+    document.addEventListener('DOMContentLoaded', function() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

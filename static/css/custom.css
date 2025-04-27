@@ -1,0 +1,154 @@
+/* Custom styles for TechLearn platform */
+
+/* General Styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+.footer {
+    margin-top: auto;
+}
+
+/* Card hover effects */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Content type badges */
+.badge-content-type {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Difficulty indicators */
+.difficulty-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.difficulty-beginner {
+    background-color: var(--bs-success);
+}
+
+.difficulty-intermediate {
+    background-color: var(--bs-warning);
+}
+
+.difficulty-advanced {
+    background-color: var(--bs-danger);
+}
+
+/* Quiz interface */
+.quiz-container {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.quiz-question {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.quiz-options label {
+    display: block;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.quiz-options label:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Progress bar styling */
+.progress {
+    height: 10px;
+    margin-bottom: 10px;
+}
+
+/* Roadmap styling */
+.roadmap-topic {
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 4px solid var(--bs-primary);
+}
+
+.roadmap-subtopic {
+    margin-left: 30px;
+}
+
+.topic-completed {
+    border-left-color: var(--bs-success);
+    background-color: rgba(var(--bs-success-rgb), 0.05);
+}
+
+.topic-checkbox {
+    margin-right: 10px;
+}
+
+/* Event styling */
+.event-date {
+    font-weight: bold;
+    color: var(--bs-primary);
+}
+
+.event-location {
+    color: var(--bs-secondary);
+    font-style: italic;
+}
+
+.event-online-badge {
+    background-color: var(--bs-info);
+}
+
+.event-offline-badge {
+    background-color: var(--bs-warning);
+}
+
+/* Calendar view */
+.calendar-day {
+    min-height: 120px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.calendar-event {
+    padding: 5px;
+    margin-bottom: 5px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+    .roadmap-subtopic {
+        margin-left: 15px;
+    }
+    
+    .calendar-day {
+        min-height: 80px;
+    }
+}

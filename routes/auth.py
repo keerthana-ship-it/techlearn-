@@ -1,0 +1,181 @@
+from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask_login import login_user, logout_user, current_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+from app import db
+from models import User, UserProfile, Skill
+from forms import LoginForm, RegistrationForm, PasswordResetRequestForm, PasswordResetForm, ProfileForm
+from utils import send_verification_email, send_password_reset_email, get_skills_dict, verify_token
+
+auth_bp = Blueprint('auth', __name__)
+
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    """User login."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and check_password_hash(user.password_hash, form.password.data):
+            login_user(user, remember=form.remember_me.data)
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            
+            next_page = request.args.get('next')
+            if next_page:
+                return redirect(next_page)
+            return redirect(url_for('main.dashboard'))
+        flash('Invalid email or password', 'danger')
+    
+    return render_template('auth/login.html', form=form)
+
+@auth_bp.route('/logout')
+def logout():
+    """User logout."""
+    logout_user()
+    flash('You have been logged out', 'info')
+    return redirect(url_for('main.index'))
+
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(
+            username=form.username.data,
+            email=form.email.data,
+            phone=form.phone.data if form.phone.data else None
+        )
+        user.set_password(form.password.data)
+        
+        # Create user profile
+        profile = UserProfile(user=user)
+        
+        db.session.add(user)
+        db.session.add(profile)
+        db.session.commit()
+        
+        # Send verification email
+        send_verification_email(user)
+        
+        flash('Registration successful! Please check your email to verify your account.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    return render_template('auth/register.html', form=form)
+
+@auth_bp.route('/verify-email/<token>')
+def verify_email(token):
+    """Verify user email."""
+    if verify_token(token):
+        # Find the user associated with this token
+        # This is a placeholder - in a real app, the token would be stored
+        # and associated with a specific user
+        
+        # Mark user as verified
+        # user.is_verified = True
+        # db.session.commit()
+        
+        flash('Your email has been verified! You can now log in.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    flash('The verification link is invalid or has expired.', 'danger')
+    return redirect(url_for('main.index'))
+
+@auth_bp.route('/reset-password-request', methods=['GET', 'POST'])
+def reset_password_request():
+    """Request password reset."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    
+    form = PasswordResetRequestForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            send_password_reset_email(user)
+        # Always show this message even if email doesn't exist (security)
+        flash('Check your email for instructions to reset your password.', 'info')
+        return redirect(url_for('auth.login'))
+    
+    return render_template('auth/reset_password.html', form=form, title='Reset Password')
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Reset password with token."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    
+    if not verify_token(token):
+        flash('The reset link is invalid or has expired.', 'danger')
+        return redirect(url_for('auth.reset_password_request'))
+    
+    form = PasswordResetForm()
+    if form.validate_on_submit():
+        # Find the user associated with this token
+        # This is a placeholder - in a real app, the token would be stored
+        # and associated with a specific user
+        # user = ...
+        
+        # Update password
+        # user.set_password(form.password.data)
+        # db.session.commit()
+        
+        flash('Your password has been reset.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    return render_template('auth/reset_password.html', form=form, title='Reset Password')
+
+@auth_bp.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    """View and edit user profile."""
+    # Get all skills for form choices
+    all_skills = Skill.query.all()
+    
+    form = ProfileForm(
+        original_username=current_user.username,
+        original_email=current_user.email,
+        original_phone=current_user.phone
+    )
+    form.skills.choices = [(skill.id, skill.name) for skill in all_skills]
+    
+    if form.validate_on_submit():
+        # Update user information
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        current_user.phone = form.phone.data if form.phone.data else None
+        
+        # Update profile information
+        profile = current_user.profile or UserProfile(user=current_user)
+        profile.location = form.location.data
+        profile.bio = form.bio.data
+        profile.education_level = form.education_level.data
+        
+        # Update skills
+        selected_skills = Skill.query.filter(Skill.id.in_(form.skills.data)).all()
+        profile.skills = selected_skills
+        
+        db.session.commit()
+        flash('Profile updated successfully', 'success')
+        return redirect(url_for('auth.profile'))
+    
+    # Pre-populate form with existing data
+    if request.method == 'GET':
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+        form.phone.data = current_user.phone
+        
+        if current_user.profile:
+            form.location.data = current_user.profile.location
+            form.bio.data = current_user.profile.bio
+            form.education_level.data = current_user.profile.education_level
+            
+            # Set selected skills
+            if current_user.profile.skills:
+                form.skills.data = [skill.id for skill in current_user.profile.skills]
+    
+    return render_template('auth/profile.html', form=form)

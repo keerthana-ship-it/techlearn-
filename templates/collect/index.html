@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}Learning Resources - TechLearn{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>
+                <i class="fas fa-book text-primary me-2"></i>Learning Resources
+            </h1>
+            <p class="lead">
+                Discover articles, videos, courses, and tutorials to enhance your tech skills.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-filter me-2"></i>Filter Resources
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('collect.index') }}" class="filter-form">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="skills" class="form-label">Skills</label>
+                        {{ form.skills(class="form-control skill-select", multiple="multiple", data_live_search="true", id="skills") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="difficulty" class="form-label">Difficulty</label>
+                        {{ form.difficulty(class="form-control", id="difficulty") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="content_type" class="form-label">Content Type</label>
+                        {{ form.content_type(class="form-control", id="content_type") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="is_free" class="form-label">Price</label>
+                        {{ form.is_free(class="form-control", id="is_free") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="start_date" class="form-label">From Date</label>
+                        {{ form.start_date(class="form-control", type="date", id="start_date") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="end_date" class="form-label">To Date</label>
+                        {{ form.end_date(class="form-control", type="date", id="end_date") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        {{ form.search(class="form-control", placeholder="Search titles & descriptions", id="search") }}
+                    </div>
+                    
+                    <div class="col-12 mt-3 d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Apply Filters
+                        </button>
+                        <a href="{{ url_for('collect.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Results Section -->
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2>Results</h2>
+            <p class="mb-0">
+                Showing {{ content_pagination.items|length }} of {{ content_pagination.total }} resources
+            </p>
+        </div>
+    </div>
+    
+    <!-- Content Cards -->
+    {% if content_pagination.items %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+            {% for content in content_pagination.items %}
+                <div class="col d-flex align-items-stretch">
+                    <div class="card w-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary">
+                                <i class="fas {{ content_type_icon(content.content_type) }} me-1"></i>
+                                {{ content.content_type|capitalize }}
+                            </span>
+                            
+                            {% if current_user.is_authenticated %}
+                                {% if content.id in bookmarked_ids %}
+                                    <a href="{{ url_for('collect.remove_bookmark', content_id=content.id) }}" class="btn btn-sm btn-link text-warning" data-bs-toggle="tooltip" title="Remove Bookmark">
+                                        <i class="fas fa-bookmark"></i>
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for('collect.bookmark_content', content_id=content.id) }}" class="btn btn-sm btn-link text-muted" data-bs-toggle="tooltip" title="Add Bookmark">
+                                        <i class="far fa-bookmark"></i>
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ content.title }}</h5>
+                            <p class="card-text">{{ content.description|truncate(100) }}</p>
+                            
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>
+                                        <i class="fas fa-user me-1 text-muted"></i> {{ content.author or 'Unknown' }}
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-clock me-1 text-muted"></i> {{ content.estimated_time or '?' }} min
+                                    </span>
+                                </div>
+                                
+                                <div class="d-flex flex-wrap">
+                                    {% if content.difficulty_level %}
+                                        <span class="badge bg-{{ difficulty_color(content.difficulty_level) }} me-1">
+                                            {{ content.difficulty_level|capitalize }}
+                                        </span>
+                                    {% endif %}
+                                    
+                                    <span class="badge {% if content.is_free %}bg-success{% else %}bg-danger{% endif %} me-1">
+                                        {% if content.is_free %}Free{% else %}Paid{% endif %}
+                                    </span>
+                                    
+                                    {% for skill in content.skills[:2] %}
+                                        <span class="badge bg-secondary me-1">{{ skill.name }}</span>
+                                    {% endfor %}
+                                    {% if content.skills|length > 2 %}
+                                        <span class="badge bg-secondary">+{{ content.skills|length - 2 }} more</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{{ url_for('collect.content_detail', content_id=content.id) }}" class="btn btn-sm btn-primary w-100">
+                                <i class="fas fa-eye me-1"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if content_pagination.pages > 1 %}
+            <nav aria-label="Resource pagination">
+                <ul class="pagination justify-content-center">
+                    {% if content_pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('collect.index', page=content_pagination.prev_num, skills=request.args.getlist('skills'), difficulty=request.args.get('difficulty'), content_type=request.args.get('content_type'), is_free=request.args.get('is_free'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), search=request.args.get('search')) }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in content_pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == content_pagination.page %}
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('collect.index', page=page_num, skills=request.args.getlist('skills'), difficulty=request.args.get('difficulty'), content_type=request.args.get('content_type'), is_free=request.args.get('is_free'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), search=request.args.get('search')) }}">{{ page_num }}</a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">&hellip;</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if content_pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('collect.index', page=content_pagination.next_num, skills=request.args.getlist('skills'), difficulty=request.args.get('difficulty'), content_type=request.args.get('content_type'), is_free=request.args.get('is_free'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), search=request.args.get('search')) }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> No resources found matching your criteria. Try adjusting your filters.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize select picker if available
+    if (typeof $.fn.selectpicker !== 'undefined') {
+        $(document).ready(function() {
+            $('.skill-select').selectpicker();
+        });
+    }
+</script>
+{% endblock %}

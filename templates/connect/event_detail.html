@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} - TechLearn{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mt-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('connect.index') }}">Tech Events</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ event.title|truncate(30) }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ event.title }}</h4>
+                    {% if event.is_online %}
+                        <span class="badge event-online-badge">Online</span>
+                    {% else %}
+                        <span class="badge event-offline-badge">In-person</span>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex flex-wrap">
+                            <div class="me-4 mb-3">
+                                <p class="mb-1"><i class="far fa-calendar-alt text-primary me-2"></i><strong>Date & Time</strong></p>
+                                <p class="mb-0">{{ event.event_date.strftime('%A, %B %d, %Y') }}</p>
+                                <p class="mb-0">{{ event.event_date.strftime('%I:%M %p') }}</p>
+                            </div>
+                            
+                            <div class="me-4 mb-3">
+                                <p class="mb-1"><i class="fas fa-map-marker-alt text-danger me-2"></i><strong>Location</strong></p>
+                                <p class="mb-0">{{ event.location }}</p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <p class="mb-1"><i class="fas fa-user-tie text-info me-2"></i><strong>Organizer</strong></p>
+                                <p class="mb-0">{{ event.organizer }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Description</h5>
+                        <p>{{ event.description or 'No description available.' }}</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Topics/Skills</h5>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if event.skills %}
+                                {% for skill in event.skills %}
+                                    <a href="{{ url_for('connect.index', skills=skill.id) }}" class="badge bg-secondary text-decoration-none">
+                                        {{ skill.name }}
+                                    </a>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">No topics specified</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-0">
+                                <small>Added on {{ event.date_added.strftime('%B %d, %Y') }}</small>
+                            </p>
+                        </div>
+                        <div>
+                            {% if event.registration_url %}
+                                <a href="{{ event.registration_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Register for Event
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Calendar Integration -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>Add to Calendar</h5>
+                </div>
+                <div class="card-body">
+                    <p>Add this event to your preferred calendar application:</p>
+                    
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ event.title|urlencode }}&dates={{ event.event_date.strftime('%Y%m%dT%H%M%S') }}/{{ (event.event_date + events.timedelta(hours=2)).strftime('%Y%m%dT%H%M%S') }}&details={{ event.description|urlencode }}&location={{ event.location|urlencode }}" 
+                           target="_blank" rel="noopener noreferrer" 
+                           class="btn btn-outline-primary">
+                            <i class="fab fa-google me-2"></i>Google Calendar
+                        </a>
+                        
+                        <a href="https://outlook.live.com/calendar/0/deeplink/compose?subject={{ event.title|urlencode }}&startdt={{ event.event_date.isoformat() }}&enddt={{ (event.event_date + events.timedelta(hours=2)).isoformat() }}&body={{ event.description|urlencode }}&location={{ event.location|urlencode }}"
+                           target="_blank" rel="noopener noreferrer" 
+                           class="btn btn-outline-primary">
+                            <i class="fab fa-microsoft me-2"></i>Outlook Calendar
+                        </a>
+                        
+                        <a href="{{ url_for('connect.calendar') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-calendar-alt me-2"></i>TechLearn Calendar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Bookmark Card -->
+            {% if current_user.is_authenticated %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-bookmark me-2"></i>Bookmark</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if is_bookmarked %}
+                            <p>You've bookmarked this event.</p>
+                            
+                            <form method="POST" action="{{ url_for('connect.bookmark_event', event_id=event.id) }}">
+                                {{ bookmark_form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    {{ bookmark_form.notes(class="form-control", rows=3, placeholder="Add your notes here...", id="notes") }}
+                                </div>
+                                
+                                <div class="mb-3 form-check">
+                                    {{ bookmark_form.set_reminder(class="form-check-input", id="set_reminder") }}
+                                    <label class="form-check-label" for="set_reminder">Send me a reminder email</label>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Update
+                                    </button>
+                                    <form method="POST" action="{{ url_for('connect.remove_bookmark', event_id=event.id) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="fas fa-trash-alt me-2"></i>Remove
+                                        </button>
+                                    </form>
+                                </div>
+                            </form>
+                        {% else %}
+                            <p>Save this event to your bookmarks and get reminded.</p>
+                            
+                            <form method="POST" action="{{ url_for('connect.bookmark_event', event_id=event.id) }}">
+                                {{ bookmark_form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    {{ bookmark_form.notes(class="form-control", rows=3, placeholder="Add your notes here...", id="notes") }}
+                                </div>
+                                
+                                <div class="mb-3 form-check">
+                                    {{ bookmark_form.set_reminder(class="form-check-input", id="set_reminder") }}
+                                    <label class="form-check-label" for="set_reminder">Send me a reminder email</label>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-bookmark me-2"></i>Bookmark Event
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <p>
+                            <i class="fas fa-info-circle me-2"></i>
+                            <a href="{{ url_for('auth.login') }}">Log in</a> to bookmark this event and get reminders.
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Related Events -->
+            {% if related_events %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-link me-2"></i>Related Events</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for related in related_events %}
+                            <a href="{{ url_for('connect.event_detail', event_id=related.id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ related.title|truncate(40) }}</h6>
+                                    <small class="text-muted">
+                                        {% if related.is_online %}
+                                            <i class="fas fa-globe-americas"></i>
+                                        {% else %}
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        {{ related.event_date.strftime('%b %d, %Y') }}
+                                    </small>
+                                    <small class="text-muted">
+                                        {{ related.location|truncate(20) }}
+                                    </small>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Share Event -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-share-alt me-2"></i>Share Event</h5>
+                </div>
+                <div class="card-body">
+                    <p>Share this event with your colleagues:</p>
+                    
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="https://twitter.com/intent/tweet?text={{ 'Check out this tech event: ' + event.title|urlencode }}&url={{ url_for('connect.event_detail', event_id=event.id, _external=True)|urlencode }}" 
+                           target="_blank" rel="noopener noreferrer" 
+                           class="btn btn-outline-primary">
+                            <i class="fab fa-twitter me-2"></i>Twitter
+                        </a>
+                        
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ url_for('connect.event_detail', event_id=event.id, _external=True)|urlencode }}" 
+                           target="_blank" rel="noopener noreferrer" 
+                           class="btn btn-outline-primary">
+                            <i class="fab fa-linkedin me-2"></i>LinkedIn
+                        </a>
+                        
+                        <a href="mailto:?subject={{ 'Tech Event: ' + event.title|urlencode }}&body={{ 'Check out this tech event: ' + event.title + '%0D%0A%0D%0A' + event.description|truncate(100)|urlencode + '%0D%0A%0D%0ADate: ' + event.event_date.strftime('%B %d, %Y at %I:%M %p') + '%0D%0ALocation: ' + event.location|urlencode + '%0D%0A%0D%0AView details: ' + url_for('connect.event_detail', event_id=event.id, _external=True)|urlencode }}" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-2"></i>Email
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

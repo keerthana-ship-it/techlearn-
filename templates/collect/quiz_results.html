@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Quiz Results - TechLearn{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mt-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('collect.index') }}">Learning Resources</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('collect.content_detail', content_id=attempt.quiz.content_id) }}">{{ attempt.quiz.content.title|truncate(20) }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Quiz Results</li>
+        </ol>
+    </nav>
+    
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Quiz Results: {{ attempt.quiz.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        {% set score_class = 'success' if attempt.passed else 'danger' %}
+                        {% set score_icon = 'check-circle' if attempt.passed else 'times-circle' %}
+                        
+                        <div class="display-1 text-{{ score_class }} mb-3">
+                            <i class="fas fa-{{ score_icon }}"></i>
+                        </div>
+                        
+                        <h2 class="mb-2">
+                            Your Score: <span class="text-{{ score_class }}">{{ attempt.score|round(1) }}%</span>
+                        </h2>
+                        
+                        <p class="lead">
+                            {% if attempt.passed %}
+                                Congratulations! You've passed the quiz.
+                            {% else %}
+                                You didn't meet the passing score of {{ attempt.quiz.passing_score }}%.
+                            {% endif %}
+                        </p>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                Started: {{ attempt.start_time.strftime('%B %d, %Y at %I:%M %p') }}<br>
+                                Completed: {{ attempt.end_time.strftime('%B %d, %Y at %I:%M %p') }}<br>
+                                {% set duration = (attempt.end_time - attempt.start_time).total_seconds() // 60 %}
+                                Duration: {{ duration|int }} minutes
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Detailed Results</h5>
+                    
+                    {% for answer in attempt.answers %}
+                        <div class="card mb-3 {% if answer.is_correct %}border-success{% else %}border-danger{% endif %}">
+                            <div class="card-header {% if answer.is_correct %}bg-success bg-opacity-10{% else %}bg-danger bg-opacity-10{% endif %}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Question {{ loop.index }}</span>
+                                    {% if answer.is_correct %}
+                                        <span class="badge bg-success">Correct</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Incorrect</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">{{ answer.question.question_text }}</p>
+                                
+                                {% if answer.question.question_type != 'short_answer' %}
+                                    <div class="mt-3">
+                                        <p class="mb-1"><strong>Your answer:</strong></p>
+                                        <div class="{% if answer.is_correct %}text-success{% else %}text-danger{% endif %}">
+                                            {% if answer.selected_option %}
+                                                {{ answer.selected_option.option_text }}
+                                            {% else %}
+                                                No answer provided
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if not answer.is_correct %}
+                                        <div class="mt-3">
+                                            <p class="mb-1"><strong>Correct answer:</strong></p>
+                                            <div class="text-success">
+                                                {% for option in answer.question.options %}
+                                                    {% if option.is_correct %}
+                                                        {{ option.option_text }}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="mt-3">
+                                        <p class="mb-1"><strong>Your answer:</strong></p>
+                                        <div class="{% if answer.is_correct %}text-success{% else %}text-danger{% endif %}">
+                                            {{ answer.text_answer or "No answer provided" }}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        {% if not attempt.passed %}
+                            <a href="{{ url_for('collect.take_quiz', quiz_id=attempt.quiz_id) }}" class="btn btn-primary">
+                                <i class="fas fa-redo me-2"></i>Retake Quiz
+                            </a>
+                        {% endif %}
+                        <a href="{{ url_for('collect.content_detail', content_id=attempt.quiz.content_id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-book me-2"></i>Return to Resource
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

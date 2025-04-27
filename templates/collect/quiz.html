@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ quiz.title }} - TechLearn{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mt-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('collect.index') }}">Learning Resources</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('collect.content_detail', content_id=quiz.content_id) }}">{{ quiz.content.title|truncate(20) }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Quiz</li>
+        </ol>
+    </nav>
+    
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ quiz.title }}</h4>
+                    {% if quiz.time_limit %}
+                        <div id="quiz-timer" data-time-limit="{{ quiz.time_limit }}" class="badge bg-warning text-dark p-2">
+                            {{ quiz.time_limit }}:00
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between">
+                            <p class="mb-1">
+                                <i class="fas fa-info-circle me-2"></i>Difficulty: 
+                                <span class="badge bg-{{ difficulty_color(quiz.difficulty_level) }}">
+                                    {{ quiz.difficulty_level|capitalize }}
+                                </span>
+                            </p>
+                            <p class="mb-1">
+                                <i class="fas fa-check-circle me-2"></i>Passing Score: {{ quiz.passing_score }}%
+                            </p>
+                        </div>
+                        {% if quiz.description %}
+                            <p class="card-text mt-2">{{ quiz.description }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <form id="quiz-form" method="POST" action="{{ url_for('collect.submit_quiz', quiz_id=quiz.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        {% for question in quiz.questions %}
+                            <div class="quiz-question mb-4">
+                                <h5>{{ loop.index }}. {{ question.question_text }}</h5>
+                                
+                                {% if question.question_type == 'multiple_choice' %}
+                                    <div class="quiz-options mt-3">
+                                        {% for option in question.options %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" 
+                                                    name="question_{{ question.id }}" 
+                                                    id="question_{{ question.id }}_option_{{ option.id }}" 
+                                                    value="{{ option.id }}" 
+                                                    required>
+                                                <label class="form-check-label" for="question_{{ question.id }}_option_{{ option.id }}">
+                                                    {{ option.option_text }}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% elif question.question_type == 'true_false' %}
+                                    <div class="quiz-options mt-3">
+                                        {% for option in question.options %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" 
+                                                    name="question_{{ question.id }}" 
+                                                    id="question_{{ question.id }}_option_{{ option.id }}" 
+                                                    value="{{ option.id }}" 
+                                                    required>
+                                                <label class="form-check-label" for="question_{{ question.id }}_option_{{ option.id }}">
+                                                    {{ option.option_text }}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% elif question.question_type == 'short_answer' %}
+                                    <div class="mt-3">
+                                        <textarea class="form-control" 
+                                            name="question_{{ question.id }}_text" 
+                                            rows="3" 
+                                            placeholder="Write your answer here..." 
+                                            required></textarea>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Make sure to answer all questions before submitting.
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Answers
+                            </button>
+                            <a href="{{ url_for('collect.content_detail', content_id=quiz.content_id) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel Quiz
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Confirm before leaving page
+    window.addEventListener('beforeunload', function(e) {
+        e.preventDefault();
+        e.returnValue = 'You have unsubmitted quiz answers. Are you sure you want to leave?';
+    });
+    
+    // Don't show warning when form is submitted
+    document.getElementById('quiz-form').addEventListener('submit', function() {
+        window.removeEventListener('beforeunload', function() {});
+    });
+</script>
+{% endblock %}

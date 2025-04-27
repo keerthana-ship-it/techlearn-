@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - TechLearn{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>
+                <i class="fas fa-tachometer-alt text-primary me-2"></i>Dashboard
+            </h1>
+            <p class="lead">
+                Welcome back, {{ current_user.username }}. Track your learning progress and bookmarks.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Dashboard Overview Cards -->
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-book text-primary me-2"></i>Learning Resources</h5>
+                    <p class="card-text">You have bookmarked {{ bookmarked_content|length }} learning resources.</p>
+                    <a href="{{ url_for('collect.index') }}" class="btn btn-sm btn-outline-primary">
+                        Browse Resources
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-users text-success me-2"></i>Tech Events</h5>
+                    <p class="card-text">You have bookmarked {{ bookmarked_events|length }} upcoming events.</p>
+                    <a href="{{ url_for('connect.index') }}" class="btn btn-sm btn-outline-success">
+                        Browse Events
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-route text-info me-2"></i>Learning Paths</h5>
+                    <p class="card-text">You have started {{ roadmap_progress|length }} learning paths.</p>
+                    <a href="{{ url_for('crux.index') }}" class="btn btn-sm btn-outline-info">
+                        Browse Roadmaps
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Learning Progress Section -->
+    {% if roadmap_progress %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>Your Learning Progress</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Roadmap</th>
+                                <th>Started</th>
+                                <th>Last Updated</th>
+                                <th>Progress</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for progress in roadmap_progress %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('crux.roadmap_detail', roadmap_id=progress.roadmap_id) }}">
+                                            {{ progress.roadmap.title }}
+                                        </a>
+                                        {% if progress.roadmap.difficulty_level %}
+                                            <span class="badge bg-{{ difficulty_color(progress.roadmap.difficulty_level) }} ms-2">
+                                                {{ progress.roadmap.difficulty_level|capitalize }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ progress.started_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ progress.last_updated.strftime('%b %d, %Y') }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 10px;">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                    style="width: {{ progress.completion_percentage }}%"
+                                                    aria-valuenow="{{ progress.completion_percentage }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100"></div>
+                                            </div>
+                                            <span>{{ progress.completion_percentage|round(1) }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('crux.roadmap_detail', roadmap_id=progress.roadmap_id) }}" class="btn btn-sm btn-primary">
+                                            Continue
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Bookmarked Content Section -->
+    {% if bookmarked_content %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-bookmark text-warning me-2"></i>Bookmarked Resources</h4>
+                <a href="{{ url_for('collect.index') }}" class="btn btn-sm btn-outline-primary">
+                    Browse All Resources
+                </a>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for content in bookmarked_content %}
+                    <a href="{{ url_for('collect.content_detail', content_id=content.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ content.title }}</h5>
+                            <span class="badge bg-secondary">{{ content.content_type|capitalize }}</span>
+                        </div>
+                        <p class="mb-1">{{ content.description|truncate(150) }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small>
+                                {% if content.difficulty_level %}
+                                    <span class="badge bg-{{ difficulty_color(content.difficulty_level) }} me-1">
+                                        {{ content.difficulty_level|capitalize }}
+                                    </span>
+                                {% endif %}
+                                <span class="badge {% if content.is_free %}bg-success{% else %}bg-danger{% endif %} me-1">
+                                    {% if content.is_free %}Free{% else %}Paid{% endif %}
+                                </span>
+                                {% for skill in content.skills[:2] %}
+                                    <span class="badge bg-secondary me-1">{{ skill.name }}</span>
+                                {% endfor %}
+                            </small>
+                            <small class="text-muted">{{ content.estimated_time or '?' }} min</small>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Bookmarked Events Section -->
+    {% if bookmarked_events %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-bookmark text-warning me-2"></i>Bookmarked Events</h4>
+                <a href="{{ url_for('connect.index') }}" class="btn btn-sm btn-outline-primary">
+                    Browse All Events
+                </a>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for event in bookmarked_events %}
+                    <a href="{{ url_for('connect.event_detail', event_id=event.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ event.title }}</h5>
+                            <span class="badge {% if event.is_online %}bg-info{% else %}bg-warning{% endif %}">
+                                {% if event.is_online %}Online{% else %}In-person{% endif %}
+                            </span>
+                        </div>
+                        <p class="mb-1">{{ event.description|truncate(150) }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small>
+                                <i class="far fa-calendar-alt me-1"></i>
+                                {{ event.event_date.strftime('%B %d, %Y at %I:%M %p') }}
+                            </small>
+                            <small>
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                {{ event.location }}
+                            </small>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Recommended Content Section -->
+    {% if recommended_content %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-lightbulb text-warning me-2"></i>Recommended for You</h4>
+            </div>
+            <div class="card-body">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    {% for content in recommended_content %}
+                        <div class="col">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <span class="badge bg-secondary">
+                                        <i class="fas {{ content_type_icon(content.content_type) }} me-1"></i>
+                                        {{ content.content_type|capitalize }}
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ content.title }}</h5>
+                                    <p class="card-text">{{ content.description|truncate(100) }}</p>
+                                    
+                                    <div class="mt-3">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>
+                                                <i class="fas fa-clock me-1 text-muted"></i> {{ content.estimated_time or '?' }} min
+                                            </span>
+                                            <span>
+                                                {% if content.is_free %}
+                                                    <span class="badge bg-success">Free</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Paid</span>
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        
+                                        {% if content.difficulty_level %}
+                                            <span class="badge bg-{{ difficulty_color(content.difficulty_level) }}">
+                                                {{ content.difficulty_level|capitalize }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <a href="{{ url_for('collect.content_detail', content_id=content.id) }}" class="btn btn-sm btn-primary w-100">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Empty State -->
+    {% if not roadmap_progress and not bookmarked_content and not bookmarked_events %}
+        <div class="card text-center mb-4">
+            <div class="card-body py-5">
+                <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                <h3 class="card-title">Your dashboard is empty</h3>
+                <p class="card-text">
+                    Start exploring learning resources, events, and roadmaps to track your progress.
+                </p>
+                <div class="mt-4">
+                    <a href="{{ url_for('collect.index') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-book me-2"></i>Browse Resources
+                    </a>
+                    <a href="{{ url_for('crux.index') }}" class="btn btn-success">
+                        <i class="fas fa-route me-2"></i>Follow a Roadmap
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
