@@ -16,4 +16,5 @@ dependencies = [
     "flask-mail>=0.10.0",
     "sendgrid>=6.11.0",
     "itsdangerous>=2.2.0",
+    "trafilatura>=2.0.0",
 ]
