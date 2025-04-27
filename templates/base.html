@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Animate.css for animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
     
@@ -16,10 +18,10 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-dark shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="fas fa-laptop-code me-2"></i>TechLearn
+            <a class="navbar-brand animate__animated animate__fadeIn" href="{{ url_for('main.index') }}">
+                <i class="fas fa-laptop-code me-2 text-primary"></i>TechLearn
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -27,48 +29,54 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint.startswith('collect') %}active{% endif %}" href="{{ url_for('collect.index') }}">
-                            <i class="fas fa-book me-1"></i> Collect
+                        <a class="nav-link {% if request.endpoint.startswith('collect') %}active fw-bold{% endif %}" href="{{ url_for('collect.index') }}">
+                            <i class="fas fa-book me-1 {% if request.endpoint.startswith('collect') %}text-primary{% endif %}"></i> Collect
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint.startswith('connect') %}active{% endif %}" href="{{ url_for('connect.index') }}">
-                            <i class="fas fa-users me-1"></i> Connect
+                        <a class="nav-link {% if request.endpoint.startswith('connect') %}active fw-bold{% endif %}" href="{{ url_for('connect.index') }}">
+                            <i class="fas fa-users me-1 {% if request.endpoint.startswith('connect') %}text-success{% endif %}"></i> Connect
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint.startswith('crux') %}active{% endif %}" href="{{ url_for('crux.index') }}">
-                            <i class="fas fa-route me-1"></i> Crux
+                        <a class="nav-link {% if request.endpoint.startswith('crux') %}active fw-bold{% endif %}" href="{{ url_for('crux.index') }}">
+                            <i class="fas fa-route me-1 {% if request.endpoint.startswith('crux') %}text-info{% endif %}"></i> Crux
                         </a>
                     </li>
                 </ul>
                 
                 <!-- Search Form -->
-                <form class="d-flex me-3" action="{{ url_for('main.search') }}" method="get">
-                    <input class="form-control me-2" type="search" placeholder="Search..." name="q" aria-label="Search">
-                    <button class="btn btn-outline-light" type="submit"><i class="fas fa-search"></i></button>
+                <form class="d-flex me-3 search-form" action="{{ url_for('main.search') }}" method="get">
+                    <div class="input-group">
+                        <input class="form-control border-end-0" type="search" placeholder="Search content, events..." name="q" aria-label="Search">
+                        <button class="btn btn-outline-primary border-start-0" type="submit"><i class="fas fa-search"></i></button>
+                    </div>
                 </form>
                 
                 <!-- User Navigation -->
                 <ul class="navbar-nav">
                     {% if current_user.is_authenticated %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-circle me-1"></i> {{ current_user.username }}
+                        <a class="nav-link dropdown-toggle user-dropdown" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1 text-info"></i> {{ current_user.username }}
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('main.dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}"><i class="fas fa-id-card me-2"></i>Profile</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('main.dashboard') }}"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}"><i class="fas fa-id-card me-2 text-success"></i>Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2 text-danger"></i>Logout</a></li>
                         </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                        <a class="nav-link btn btn-sm btn-outline-primary me-2 px-3" href="{{ url_for('auth.login') }}">
+                            <i class="fas fa-sign-in-alt me-1"></i> Login
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
+                        <a class="nav-link btn btn-sm btn-primary px-3" href="{{ url_for('auth.register') }}">
+                            <i class="fas fa-user-plus me-1"></i> Register
+                        </a>
                     </li>
                     {% endif %}
                 </ul>
@@ -81,7 +89,8 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
+                    <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show shadow-sm animate__animated animate__fadeIn" role="alert">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
@@ -99,27 +108,41 @@
     <footer class="footer mt-5 py-4 bg-dark">
         <div class="container">
             <div class="row">
-                <div class="col-md-4 mb-3">
-                    <h5>TechLearn</h5>
-                    <p class="text-muted">Learn, Connect, Grow - Your comprehensive tech learning platform.</p>
+                <div class="col-md-4 mb-4">
+                    <div class="animate__animated animate__fadeIn">
+                        <h5 class="mb-3 border-bottom border-primary pb-2"><i class="fas fa-laptop-code text-primary me-2"></i>TechLearn</h5>
+                        <p class="text-muted">Learn, Connect, Grow - Your comprehensive tech learning platform for developing skills, joining events, and following structured paths.</p>
+                        <div class="mt-3 social-icons">
+                            <a href="#" class="text-light me-3"><i class="fab fa-twitter fa-lg"></i></a>
+                            <a href="#" class="text-light me-3"><i class="fab fa-linkedin fa-lg"></i></a>
+                            <a href="#" class="text-light me-3"><i class="fab fa-github fa-lg"></i></a>
+                            <a href="#" class="text-light"><i class="fab fa-discord fa-lg"></i></a>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <h5>Contact Support</h5>
-                    <p class="mb-1"><i class="fas fa-envelope me-2"></i> learnconnectcrux@gmail.com</p>
-                    <p><i class="fas fa-phone me-2"></i> +91 9444041192</p>
+                <div class="col-md-4 mb-4">
+                    <div class="animate__animated animate__fadeIn">
+                        <h5 class="mb-3 border-bottom border-success pb-2"><i class="fas fa-headset text-success me-2"></i>Contact Support</h5>
+                        <p class="mb-2"><i class="fas fa-envelope me-2 text-muted"></i> learnconnectcrux@gmail.com</p>
+                        <p class="mb-2"><i class="fas fa-phone me-2 text-muted"></i> +91 9444041192</p>
+                        <p><i class="fas fa-map-marker-alt me-2 text-muted"></i> Chennai, India</p>
+                    </div>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <h5>Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{{ url_for('collect.index') }}">Learning Resources</a></li>
-                        <li><a href="{{ url_for('connect.index') }}">Tech Events</a></li>
-                        <li><a href="{{ url_for('crux.index') }}">Learning Paths</a></li>
-                    </ul>
+                <div class="col-md-4 mb-4">
+                    <div class="animate__animated animate__fadeIn">
+                        <h5 class="mb-3 border-bottom border-info pb-2"><i class="fas fa-link text-info me-2"></i>Quick Links</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><a href="{{ url_for('collect.index') }}" class="text-decoration-none"><i class="fas fa-angle-right me-2 text-muted"></i>Learning Resources</a></li>
+                            <li class="mb-2"><a href="{{ url_for('connect.index') }}" class="text-decoration-none"><i class="fas fa-angle-right me-2 text-muted"></i>Tech Events</a></li>
+                            <li class="mb-2"><a href="{{ url_for('crux.index') }}" class="text-decoration-none"><i class="fas fa-angle-right me-2 text-muted"></i>Learning Paths</a></li>
+                            <li><a href="#" class="text-decoration-none"><i class="fas fa-angle-right me-2 text-muted"></i>Help Center</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <hr>
             <div class="text-center">
-                <p class="mb-0">&copy; 2023 TechLearn. All rights reserved.</p>
+                <p class="mb-0">&copy; 2025 TechLearn. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -127,10 +150,36 @@
     <!-- Toast Container for Notifications -->
     <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
     
+    <!-- Progress to Top Button -->
+    <button id="back-to-top" class="btn btn-primary btn-sm position-fixed bottom-0 end-0 m-4 rounded-circle d-none" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <script>
+    // Back to top button functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const backToTopButton = document.getElementById('back-to-top');
+        
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.remove('d-none');
+                backToTopButton.classList.add('d-block', 'animate__animated', 'animate__fadeIn');
+            } else {
+                backToTopButton.classList.remove('d-block', 'animate__animated', 'animate__fadeIn');
+                backToTopButton.classList.add('d-none');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', function() {
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        });
+    });
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>
