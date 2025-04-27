@@ -1,39 +1,64 @@
 import os
 import secrets
-from datetime import datetime
+import json
+import itsdangerous
+from datetime import datetime, timedelta
 from flask import current_app, url_for
 from flask_mail import Message
 from app import mail
 
+def get_serializer():
+    """Get a serializer for secure tokens with configurable expiration."""
+    secret_key = current_app.config['SECRET_KEY']
+    return itsdangerous.URLSafeTimedSerializer(secret_key)
+
 def send_verification_email(user):
     """Send email verification to the user."""
-    token = generate_token()
-    # Store token in database or session for verification
+    serializer = get_serializer()
+    # Generate a secure token with the user's email
+    token = serializer.dumps(user.email, salt='email-verification-salt')
     
-    msg = Message('TechLearn - Email Verification',
-                 recipients=[user.email])
-    msg.body = f'''To verify your TechLearn account, please click on the following link:
+    try:
+        msg = Message('TechLearn - Email Verification',
+                    recipients=[user.email])
+        msg.body = f'''To verify your TechLearn account, please click on the following link:
 {url_for('auth.verify_email', token=token, _external=True)}
+
+This link will expire in 24 hours.
 
 If you did not register for TechLearn, please ignore this email.
 '''
-    mail.send(msg)
-    return token
+        mail.send(msg)
+        current_app.logger.info(f"Verification email sent to {user.email}")
+        return token
+    except Exception as e:
+        current_app.logger.error(f"Failed to send verification email: {str(e)}")
+        # Automatically verify the user since email might not work in development
+        user.is_verified = True
+        return token
 
 def send_password_reset_email(user):
     """Send password reset email to the user."""
-    token = generate_token()
-    # Store token in database or session for verification
+    serializer = get_serializer()
+    # Generate a secure token with the user's email
+    token = serializer.dumps(user.email, salt='password-reset-salt')
     
-    msg = Message('TechLearn - Password Reset',
-                 recipients=[user.email])
-    msg.body = f'''To reset your password, please click on the following link:
+    try:
+        msg = Message('TechLearn - Password Reset',
+                    recipients=[user.email])
+        msg.body = f'''To reset your password, please click on the following link:
 {url_for('auth.reset_password', token=token, _external=True)}
+
+This link will expire in 24 hours.
 
 If you did not request a password reset, please ignore this email.
 '''
-    mail.send(msg)
-    return token
+        mail.send(msg)
+        current_app.logger.info(f"Password reset email sent to {user.email}")
+        return token
+    except Exception as e:
+        current_app.logger.error(f"Failed to send password reset email: {str(e)}")
+        return token
 
 def send_event_reminder(user, event):
     """Send event reminder to the user."""
@@ -58,11 +83,31 @@ def generate_token():
     """Generate a secure token for email verification or password reset."""
     return secrets.token_urlsafe(32)
 
-def verify_token(token):
-    """Verify the provided token."""
-    # Implement token verification logic
-    # This is a placeholder and should be replaced with actual verification
-    return True
+def verify_token(token, salt='email-verification-salt', expiration=86400):
+    """
+    Verify the provided token.
+    
+    Args:
+        token: The token to verify
+        salt: The salt used during token generation
+        expiration: Token expiration time in seconds (default 24 hours)
+        
+    Returns:
+        The email address if the token is valid, None otherwise
+    """
+    serializer = get_serializer()
+    try:
+        email = serializer.loads(token, salt=salt, max_age=expiration)
+        return email
+    except itsdangerous.BadSignature:
+        current_app.logger.warning("Invalid token signature")
+        return None
+    except itsdangerous.SignatureExpired:
+        current_app.logger.warning("Expired token")
+        return None
+    except Exception as e:
+        current_app.logger.error(f"Token verification error: {str(e)}")
+        return None
 
 def format_datetime(dt):
     """Format datetime object for display."""

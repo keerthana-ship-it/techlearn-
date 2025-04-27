@@ -14,4 +14,6 @@ dependencies = [
     "flask-migrate>=4.1.0",
     "bootstrap-flask>=2.4.2",
     "flask-mail>=0.10.0",
+    "sendgrid>=6.11.0",
+    "itsdangerous>=2.2.0",
 ]
