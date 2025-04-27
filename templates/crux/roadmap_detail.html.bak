@@ -62,15 +62,16 @@
                                 <span>Last updated: {{ user_progress.last_updated.strftime('%B %d, %Y') }}</span>
                             </div>
                             <div class="progress mb-3">
-                                <div class="progress-bar bg-success roadmap-progress-bar" role="progressbar" 
+                                <div class="progress-bar bg-success" role="progressbar" 
                                      style="width: {{ user_progress.completion_percentage }}%"
-                                     aria-valuenow="{{ user_progress.completion_percentage|round|int }}" 
+                                     aria-valuenow="{{ user_progress.completion_percentage }}" 
                                      aria-valuemin="0" 
                                      aria-valuemax="100"></div>
                             </div>
                             
                             <form method="POST" action="{{ url_for('crux.reset_progress', roadmap_id=roadmap.id) }}"
                                   onsubmit="return confirm('Are you sure you want to reset your progress? This cannot be undone.')">
+                                <!-- No CSRF token required for now -->
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
                                     <i class="fas fa-undo me-2"></i>Reset Progress
                                 </button>
@@ -96,6 +97,7 @@
                                         <div>
                                             {% if current_user.is_authenticated and user_progress %}
                                                 <form id="mark-topic-form-{{ topic.id }}" method="POST" action="{{ url_for('crux.mark_topic', topic_id=topic.id) }}" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <div class="form-check d-inline-block me-2">
                                                         <input type="checkbox" class="form-check-input topic-checkbox" 
                                                                id="topic-check-{{ topic.id }}" 
@@ -157,6 +159,7 @@
                                                         <div>
                                                             {% if current_user.is_authenticated and user_progress %}
                                                                 <form id="mark-topic-form-{{ subtopic.id }}" method="POST" action="{{ url_for('crux.mark_topic', topic_id=subtopic.id) }}" class="d-inline">
+                                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                                     <div class="form-check d-inline-block me-2">
                                                                         <input type="checkbox" class="form-check-input topic-checkbox" 
                                                                                id="topic-check-{{ subtopic.id }}" 
@@ -226,28 +229,33 @@
             <!-- Action Card -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Actions</h5>
+                    <h5 class="mb-0"><i class="fas fa-play-circle me-2"></i>Start Learning</h5>
                 </div>
                 <div class="card-body">
                     {% if current_user.is_authenticated %}
                         {% if user_progress %}
+                            <p>You're making progress on this roadmap!</p>
                             <div class="d-grid gap-2">
-                                <a href="#" class="btn btn-primary">
+                                <a href="#topic-{{ topic_completions|selectattr('1', 'eq', false)|first|default('1') }}" class="btn btn-primary">
                                     <i class="fas fa-play me-2"></i>Continue Learning
                                 </a>
                             </div>
                         {% else %}
-                            <form action="{{ url_for('crux.start_roadmap', roadmap_id=roadmap.id) }}" method="POST" class="d-grid gap-2">
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-play me-2"></i>Start Learning Path
-                                </button>
+                            <p>Start tracking your progress with this roadmap.</p>
+                            <form method="POST" action="{{ url_for('crux.start_roadmap', roadmap_id=roadmap.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-play me-2"></i>Start This Roadmap
+                                    </button>
+                                </div>
                             </form>
                         {% endif %}
                     {% else %}
-                        <p>Log in to start this learning path</p>
+                        <p>Log in to track your progress with this roadmap.</p>
                         <div class="d-grid">
                             <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
-                                <i class="fas fa-sign-in-alt me-2"></i>Log In
+                                <i class="fas fa-sign-in-alt me-2"></i>Log In to Start
                             </a>
                         </div>
                     {% endif %}
@@ -291,32 +299,14 @@
                             <i class="fab fa-linkedin me-2"></i>LinkedIn
                         </a>
                         
-                        <button type="button" class="btn btn-outline-primary" 
-                                onclick="navigator.clipboard.writeText('{{ url_for('crux.roadmap_detail', roadmap_id=roadmap.id, _external=True) }}'); alert('Link copied to clipboard!')">
-                            <i class="fas fa-copy me-2"></i>Copy Link
-                        </button>
+                        <a href="mailto:?subject={{ 'Learning Path: ' + roadmap.title|urlencode }}&body={{ 'Check out this learning path: ' + roadmap.title + '%0D%0A%0D%0A' + roadmap.description|truncate(100)|urlencode + '%0D%0A%0D%0AView details: ' + url_for('crux.roadmap_detail', roadmap_id=roadmap.id, _external=True)|urlencode }}" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-2"></i>Email
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Progress stats
-    const completedTopics = document.querySelectorAll('.topic-completed').length;
-    const totalTopics = document.querySelectorAll('.roadmap-topic').length;
-    
-    if (completedTopics > 0 && totalTopics > 0) {
-        const progressText = document.querySelector('.progress-text');
-        if (progressText) {
-            const percentage = Math.round((completedTopics / totalTopics) * 100);
-            progressText.textContent = `${completedTopics}/${totalTopics} completed (${percentage}%)`;
-        }
-    }
-});
-</script>
 {% endblock %}

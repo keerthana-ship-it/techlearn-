@@ -15,11 +15,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
     
     {% block extra_css %}{% endblock %}
-    
-    {# Define a global csrf_token function for backward compatibility #}
-    {% macro csrf_token() -%}
-        {{ csrf_token() if csrf_token is defined else '' }}
-    {%- endmacro %}
 </head>
 <body>
     <!-- Navigation -->
