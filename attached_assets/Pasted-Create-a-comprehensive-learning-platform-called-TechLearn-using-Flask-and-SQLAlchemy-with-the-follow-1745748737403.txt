@@ -1,0 +1,85 @@
+Create a comprehensive learning platform called TechLearn using Flask and SQLAlchemy with the following specific implementation requirements:
+
+Core System Requirements:
+
+Flask web application structure:
+Use Flask-SQLAlchemy for database
+Use Flask-Login for authentication
+Use Flask-Mail for email notifications
+Use Flask-WTF for forms
+Implement Gunicorn for production server
+Database Schema (SQLite for development):
+User model with: username, email, phone, password, verification status
+UserProfile model for: location, bio, skills, education level
+Content model for learning resources
+Event model for tech events
+Bookmark models for both content and events
+Quiz system models for skill assessment
+Roadmap models for learning paths
+Authentication System:
+Email/phone registration with verification
+Password reset functionality
+Profile management
+Session handling
+Core Modules:
+A. Collect Module (Learning Resources):
+
+Content types: articles, videos, courses, tutorials
+Filtering system by:
+Multiple skills (AND/OR logic)
+Difficulty levels
+Content type
+Date ranges
+Content properties:
+Title and description
+Source information (author, platform)
+Estimated completion time
+Free/paid indicator
+Content bookmarking system
+Quiz system integration
+B. Connect Module (Tech Events):
+
+Default location: Chennai
+Event properties:
+Title and description
+Location (physical/online)
+Date and time
+Registration URL
+Organizer details
+Event filtering by:
+Location
+Event type (online/offline)
+Skills/topics
+Date range
+Event bookmarking system
+C. Crux Module (Learning Paths):
+
+Structured learning roadmaps
+Topic hierarchy system
+Progress tracking
+Resource association
+Frontend Requirements:
+Bootstrap-based responsive design
+Dark theme
+Custom CSS for:
+Card hover effects
+Content type badges
+Difficulty indicators
+Quiz interface
+Forms Implementation:
+Registration form with validation
+Profile management form
+Content search form with multiple filters
+Event search form
+Quiz submission form
+Contact Support Integration:
+Support email: learnconnectcrux@gmail.com
+Phone support: +91 9444041192
+Development Configuration:
+Debug mode enabled
+SQLite database
+Mail server configuration
+Secret key management
+Gunicorn server setup (0.0.0.0:5000)"
+This is the exact prompt that was used to create the project as evidenced by the file paths, code structure, and implementation details visible in the codebase. It includes all the key components and requirements that are reflected in the final implementation.
+
