@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from models import Content, Event, Roadmap, Skill
 from app import db
+from utils import difficulty_color, content_type_icon
 
 main_bp = Blueprint('main', __name__)
 
@@ -20,7 +21,9 @@ def index():
                           featured_content=featured_content,
                           upcoming_events=upcoming_events,
                           featured_roadmaps=featured_roadmaps,
-                          popular_skills=popular_skills)
+                          popular_skills=popular_skills,
+                          difficulty_color=difficulty_color,
+                          content_type_icon=content_type_icon)
 
 @main_bp.route('/search')
 def search():
@@ -48,7 +51,9 @@ def search():
                           query=query,
                           content_results=content_results,
                           event_results=event_results,
-                          roadmap_results=roadmap_results)
+                          roadmap_results=roadmap_results,
+                          difficulty_color=difficulty_color,
+                          content_type_icon=content_type_icon)
 
 @main_bp.route('/dashboard')
 @login_required
@@ -83,4 +88,6 @@ def dashboard():
                           bookmarked_content=bookmarked_content,
                           bookmarked_events=bookmarked_events,
                           roadmap_progress=roadmap_progress,
-                          recommended_content=recommended_content)
+                          recommended_content=recommended_content,
+                          difficulty_color=difficulty_color,
+                          content_type_icon=content_type_icon)
