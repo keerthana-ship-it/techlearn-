@@ -8,9 +8,13 @@ class Config:
     
     # Database configuration
     if os.environ.get("DATABASE_URL"):
-        # Handle Heroku/Render PostgreSQL URL
+        # Handle Render PostgreSQL URL
         url = urlparse(os.environ.get("DATABASE_URL"))
-        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{url.username}:{url.password}@{url.hostname}:{url.port}{url.path}"
+        if url.port is None:
+            # If no port is specified, use default PostgreSQL port
+            SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{url.username}:{url.password}@{url.hostname}:5432{url.path}"
+        else:
+            SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{url.username}:{url.password}@{url.hostname}:{url.port}{url.path}"
     else:
         SQLALCHEMY_DATABASE_URI = "sqlite:///techlearn.db"
     
