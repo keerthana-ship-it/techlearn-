@@ -1,10 +1,19 @@
 import os
+from urllib.parse import urlparse
 
 class Config:
     """Base configuration class."""
     DEBUG = True
     SECRET_KEY = os.environ.get("SESSION_SECRET", "dev_key_replace_in_production")
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///techlearn.db")
+    
+    # Database configuration
+    if os.environ.get("DATABASE_URL"):
+        # Handle Heroku/Render PostgreSQL URL
+        url = urlparse(os.environ.get("DATABASE_URL"))
+        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{url.username}:{url.password}@{url.hostname}:{url.port}{url.path}"
+    else:
+        SQLALCHEMY_DATABASE_URI = "sqlite:///techlearn.db"
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_recycle": 300,
