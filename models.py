@@ -1,7 +1,7 @@
 from datetime import datetime
-from app import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from app import db
 
 # Association tables for many-to-many relationships
 content_skills = db.Table('content_skills',
